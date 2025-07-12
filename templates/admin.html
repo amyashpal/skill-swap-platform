@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Skill Swap Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header Navigation -->
+    <nav class="navbar admin-nav">
+        <div class="nav-container">
+            <h1 class="nav-title">
+                <i class="fas fa-shield-alt"></i>
+                Admin Dashboard
+            </h1>
+            <div class="nav-actions">
+                <a href="{{ url_for('index') }}" class="home-btn">
+                    <i class="fas fa-home"></i> Back to Site
+                </a>
+                <div class="user-profile">
+                    <img src="{{ url_for('static', filename='images/default-avatar.png') }}" alt="Profile" class="nav-avatar">
+                    <span>{{ session.name }}</span>
+                    <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Admin Sidebar -->
+    <div class="admin-layout">
+        <aside class="admin-sidebar">
+            <div class="sidebar-menu">
+                <button class="menu-item active" data-section="dashboard" onclick="showSection('dashboard')">
+                    <i class="fas fa-chart-line"></i>
+                    Dashboard
+                </button>
+                <button class="menu-item" data-section="users" onclick="showSection('users')">
+                    <i class="fas fa-users"></i>
+                    Users
+                </button>
+                <button class="menu-item" data-section="skills" onclick="showSection('skills')">
+                    <i class="fas fa-tools"></i>
+                    Skills
+                </button>
+                <button class="menu-item" data-section="swaps" onclick="showSection('swaps')">
+                    <i class="fas fa-exchange-alt"></i>
+                    Swaps
+                </button>
+                <button class="menu-item" data-section="reports" onclick="showSection('reports')">
+                    <i class="fas fa-file-alt"></i>
+                    Reports
+                </button>
+                <button class="menu-item" data-section="messages" onclick="showSection('messages')">
+                    <i class="fas fa-envelope"></i>
+                    Messages
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Admin Content -->
+        <main class="admin-content">
+            <!-- Dashboard Section -->
+            <section class="admin-section active" id="dashboard">
+                <h2>Platform Overview</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalUsers">{{ stats.total_users }}</h3>
+                            <p>Total Users</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalSwaps">{{ stats.total_swaps }}</h3>
+                            <p>Total Swaps</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="pendingSwaps">{{ stats.pending_swaps }}</h3>
+                            <p>Pending Swaps</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="avgRating">{{ stats.avg_rating }}</h3>
+                            <p>Avg Rating</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Users Section -->
+            <section class="admin-section" id="users">
+                <h2>User Management</h2>
+                <div class="section-actions">
+                    <input type="text" id="userSearch" placeholder="Search users...">
+                    <button class="btn btn-primary" onclick="exportUsers()">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                </div>
+                <div class="data-table">
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- Users will be loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Skills Section -->
+            <section class="admin-section" id="skills">
+                <h2>Skills Management</h2>
+                <div class="skills-moderation">
+                    <h3>Pending Skill Reviews</h3>
+                    <div class="pending-skills" id="pendingSkills">
+                        <!-- Pending skills will be loaded dynamically -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Swaps Section -->
+            <section class="admin-section" id="swaps">
+                <h2>Swap Monitoring</h2>
+                <div class="section-actions">
+                    <select id="swapStatusFilter">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="accepted">Accepted</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="data-table">
+                    <table id="swapsTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Skills</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="swapsTableBody">
+                            <!-- Swaps will be loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Reports Section -->
+            <section class="admin-section" id="reports">
+                <h2>Reports & Analytics</h2>
+                <div class="reports-grid">
+                    <div class="report-card">
+                        <h3>User Activity Report</h3>
+                        <button class="btn btn-primary" onclick="downloadReport('user-activity')">
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                    </div>
+                    <div class="report-card">
+                        <h3>Feedback Log</h3>
+                        <button class="btn btn-primary" onclick="downloadReport('feedback')">
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                    </div>
+                    <div class="report-card">
+                        <h3>Swap Statistics</h3>
+                        <button class="btn btn-primary" onclick="downloadReport('swap-stats')">
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Messages Section -->
+            <section class="admin-section" id="messages">
+                <h2>Platform Messages</h2>
+                <div class="message-composer">
+                    <h3>Send Platform-wide Message</h3>
+                    <form id="messageForm">
+                        <div class="form-group">
+                            <label for="messageType">Message Type:</label>
+                            <select id="messageType">
+                                <option value="announcement">Announcement</option>
+                                <option value="maintenance">Maintenance Alert</option>
+                                <option value="feature">Feature Update</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="messageTitle">Title:</label>
+                            <input type="text" id="messageTitle" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="messageContent">Message:</label>
+                            <textarea id="messageContent" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i>
+                            Send Message
+                        </button>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Ban User Modal -->
+    <div class="modal" id="banUserModal">
+        <div class="modal-content">
+            <span class="close" onclick="closeBanModal()">&times;</span>
+            <h3>Ban User</h3>
+            <form id="banUserForm">
+                <div class="form-group">
+                    <label for="banReason">Reason for ban:</label>
+                    <textarea id="banReason" required placeholder="Explain why this user is being banned..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeBanModal()">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Ban User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        // Admin Panel JavaScript
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.admin-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all menu items
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionId).classList.add('active');
+            document.querySelector(`[data-section="${sectionId}"]`).classList.add('active');
+            
+            // Load section data
+            if (sectionId === 'users') {
+                loadUsers();
+            } else if (sectionId === 'swaps') {
+                loadSwaps();
+            } else if (sectionId === 'skills') {
+                loadSkills();
+            }
+        }
+        
+        function loadUsers() {
+            fetch('/api/admin/users')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.getElementById('usersTableBody');
+                    tbody.innerHTML = '';
+                    
+                    data.users.forEach(user => {
+                        const row = document.createElement('tr');
+                        const status = user.status || 'active';
+                        row.innerHTML = `
+                            <td>${user.id}</td>
+                            <td>${user.name}</td>
+                            <td>${user.email}</td>
+                            <td><span class="status-badge status-${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span></td>
+                            <td>
+                                ${status !== 'banned' ? 
+                                    `<button class="btn btn-danger btn-sm" onclick="banUser('${user.id}', '${user.name}')">
+                                        <i class="fas fa-ban"></i> Ban
+                                    </button>` : 
+                                    '<span class="text-muted">Banned</span>'
+                                }
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error loading users:', error));
+        }
+        
+        function loadSwaps() {
+            // Demo swap data loading
+            const tbody = document.getElementById('swapsTableBody');
+            tbody.innerHTML = '<tr><td colspan="7">No swap data available in demo mode</td></tr>';
+        }
+        
+        function loadSkills() {
+            const container = document.getElementById('pendingSkills');
+            container.innerHTML = '<p>No pending skill reviews in demo mode</p>';
+        }
+        
+        function banUser(userId, userName) {
+            if (confirm(`Are you sure you want to ban user "${userName}"?`)) {
+                showModal('banUserModal');
+                // Store user ID for ban form submission
+                document.getElementById('banUserForm').dataset.userId = userId;
+            }
+        }
+        
+        function closeBanModal() {
+            hideModal('banUserModal');
+        }
+        
+        function exportUsers() {
+            alert('Export functionality would download a CSV file in production');
+        }
+        
+        function downloadReport(reportType) {
+            alert(`${reportType} report would be downloaded in production`);
+        }
+        
+        // Initialize admin panel
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load users data on page load
+            loadUsers();
+            
+            // Handle ban user form
+            document.getElementById('banUserForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const userId = this.dataset.userId;
+                const reason = document.getElementById('banReason').value;
+                
+                const formData = new FormData();
+                formData.append('user_id', userId);
+                formData.append('reason', reason);
+                
+                fetch('/api/admin/ban_user', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        closeBanModal();
+                        loadUsers(); // Reload users list
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error banning user');
+                });
+            });
+            
+            // Handle message form
+            document.getElementById('messageForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const type = document.getElementById('messageType').value;
+                const title = document.getElementById('messageTitle').value;
+                const content = document.getElementById('messageContent').value;
+                
+                alert(`Platform message would be sent in production:\nType: ${type}\nTitle: ${title}\nContent: ${content}`);
+                
+                // Reset form
+                this.reset();
+            });
+        });
+    </script>
+</body>
+</html>

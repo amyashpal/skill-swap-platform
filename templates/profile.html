@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - Skill Swap Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="nav-title">
+                <i class="fas fa-exchange-alt"></i>
+                Skill Swap Platform
+            </h1>
+            <div class="nav-actions">
+                <a href="{{ url_for('index') }}" class="home-btn">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                <div class="user-profile">
+                    <img src="{{ url_for('static', filename='images/default-avatar.png') }}" alt="Profile" class="nav-avatar">
+                    <span>{{ session.name }}</span>
+                    <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="profile-container">
+        <div class="profile-card">
+            <div class="profile-photo">
+                <img id="profileAvatar" src="{{ url_for('static', filename='images/default-avatar.png') }}" alt="Profile Photo">
+                <button class="upload-btn" onclick="uploadPhoto()">
+                    <i class="fas fa-camera"></i> Change Photo
+                </button>
+            </div>
+            <div class="profile-info">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="flash-messages">
+                            {% for message in messages %}
+                                <div class="alert alert-success">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                
+                <form method="POST" action="{{ url_for('update_profile') }}" id="profileForm">
+                    <div class="form-group">
+                        <label for="name">
+                            <i class="fas fa-user"></i> Name
+                        </label>
+                        <input type="text" id="name" name="name" value="{{ user_data.name or '' }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location">
+                            <i class="fas fa-map-marker-alt"></i> Location
+                        </label>
+                        <input type="text" id="location" name="location" value="{{ user_data.location or '' }}" placeholder="Enter your location">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="skills_offered">
+                            <i class="fas fa-briefcase"></i> Skills Offered
+                        </label>
+                        <textarea id="skills_offered" name="skills_offered" placeholder="List your skills here..." required>{{ user_data.skills_offered or '' }}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="skills_wanted">
+                            <i class="fas fa-lightbulb"></i> Skills Wanted
+                        </label>
+                        <textarea id="skills_wanted" name="skills_wanted" placeholder="Skills you're looking for..." required>{{ user_data.skills_wanted or '' }}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="availability">
+                            <i class="fas fa-calendar-alt"></i> Availability
+                        </label>
+                        <select id="availability" name="availability">
+                            <option value="weekends" {% if user_data.availability == 'weekends' %}selected{% endif %}>Weekends</option>
+                            <option value="evenings" {% if user_data.availability == 'evenings' %}selected{% endif %}>Evenings</option>
+                            <option value="weekdays" {% if user_data.availability == 'weekdays' %}selected{% endif %}>Weekdays</option>
+                            <option value="flexible" {% if user_data.availability == 'flexible' %}selected{% endif %}>Flexible</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="profile_visibility">
+                            <i class="fas fa-eye"></i> Profile Visibility
+                        </label>
+                        <select id="profile_visibility" name="profile_visibility">
+                            <option value="public" {% if user_data.profile_visibility == 'public' %}selected{% endif %}>Public</option>
+                            <option value="private" {% if user_data.profile_visibility == 'private' %}selected{% endif %}>Private</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs">
+            <a href="{{ url_for('index') }}" class="tab-item">Home</a>
+            <a href="{{ url_for('swap_requests') }}" class="tab-item">Swap Requests</a>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        function uploadPhoto() {
+            alert('Photo upload feature not implemented in demo');
+        }
+    </script>
+</body>
+</html>

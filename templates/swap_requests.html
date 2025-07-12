@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swap Requests - Skill Swap Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="nav-title">
+                <i class="fas fa-exchange-alt"></i>
+                Skill Swap Platform
+            </h1>
+            <div class="nav-actions">
+                <a href="{{ url_for('index') }}" class="home-btn">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                <div class="user-profile">
+                    <img src="{{ url_for('static', filename='images/default-avatar.png') }}" alt="Profile" class="nav-avatar">
+                    <span>{{ session.name }}</span>
+                    <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="requests-container">
+        <div class="requests-header">
+            <h2>Skill Swap Requests</h2>
+            <div class="request-tabs">
+                <button class="tab-btn active" data-tab="incoming" onclick="switchTab('incoming')">
+                    <i class="fas fa-inbox"></i>
+                    Incoming (<span id="incomingCount">{{ incoming_requests|length }}</span>)
+                </button>
+                <button class="tab-btn" data-tab="outgoing" onclick="switchTab('outgoing')">
+                    <i class="fas fa-paper-plane"></i>
+                    Outgoing (<span id="outgoingCount">{{ outgoing_requests|length }}</span>)
+                </button>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-section">
+            <div class="filter-group">
+                <label for="statusFilter">Status:</label>
+                <select id="statusFilter" onchange="filterRequests()">
+                    <option value="">All</option>
+                    <option value="pending">Pending</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Incoming Requests Tab -->
+        <div class="tab-content active" id="incomingTab">
+            <div class="requests-list">
+                {% if incoming_requests %}
+                    {% for request in incoming_requests %}
+                    <div class="request-card">
+                        <div class="request-header">
+                            <h4>From: {{ demo_data['users'][request.from_user]['name'] if request.from_user in demo_data['users'] else request.from_user }}</h4>
+                            <span class="status-badge status-{{ request.status }}">{{ request.status.title() }}</span>
+                        </div>
+                        <div class="request-content">
+                            <p><strong>They offer:</strong> {{ request.my_skill }}</p>
+                            <p><strong>They want:</strong> {{ request.their_skill }}</p>
+                            <p><strong>Message:</strong> {{ request.message }}</p>
+                            <p><strong>Date:</strong> {{ request.created_at.strftime('%Y-%m-%d %H:%M') if request.created_at else 'N/A' }}</p>
+                        </div>
+                        {% if request.status == 'pending' %}
+                        <div class="request-actions">
+                            <form method="POST" action="{{ url_for('update_request') }}" style="display: inline;">
+                                <input type="hidden" name="request_id" value="{{ request.id }}">
+                                <input type="hidden" name="action" value="accepted">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-check"></i> Accept
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('update_request') }}" style="display: inline;">
+                                <input type="hidden" name="request_id" value="{{ request.id }}">
+                                <input type="hidden" name="action" value="rejected">
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h3>No incoming requests</h3>
+                        <p>You haven't received any skill swap requests yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Outgoing Requests Tab -->
+        <div class="tab-content" id="outgoingTab">
+            <div class="requests-list">
+                {% if outgoing_requests %}
+                    {% for request in outgoing_requests %}
+                    <div class="request-card">
+                        <div class="request-header">
+                            <h4>To: {{ demo_data['users'][request.to_user]['name'] if request.to_user in demo_data['users'] else request.to_user }}</h4>
+                            <span class="status-badge status-{{ request.status }}">{{ request.status.title() }}</span>
+                        </div>
+                        <div class="request-content">
+                            <p><strong>You offer:</strong> {{ request.my_skill }}</p>
+                            <p><strong>You want:</strong> {{ request.their_skill }}</p>
+                            <p><strong>Message:</strong> {{ request.message }}</p>
+                            <p><strong>Date:</strong> {{ request.created_at.strftime('%Y-%m-%d %H:%M') if request.created_at else 'N/A' }}</p>
+                        </div>
+                        {% if request.status == 'pending' %}
+                        <div class="request-actions">
+                            <form method="POST" action="{{ url_for('update_request') }}" style="display: inline;">
+                                <input type="hidden" name="request_id" value="{{ request.id }}">
+                                <input type="hidden" name="action" value="cancelled">
+                                <button type="submit" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-paper-plane"></i>
+                        <h3>No outgoing requests</h3>
+                        <p>You haven't sent any skill swap requests yet.</p>
+                        <a href="{{ url_for('index') }}" class="btn btn-primary">Browse Skills</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" id="pagination">
+            <!-- Pagination will be generated dynamically -->
+        </div>
+    </main>
+
+    <!-- Feedback Modal -->
+    <div class="modal" id="feedbackModal">
+        <div class="modal-content">
+            <span class="close" onclick="closeFeedbackModal()">&times;</span>
+            <h3>Leave Feedback</h3>
+            <form id="feedbackForm">
+                <div class="form-group">
+                    <label>Rating:</label>
+                    <div class="star-rating">
+                        <span class="star" data-rating="1">★</span>
+                        <span class="star" data-rating="2">★</span>
+                        <span class="star" data-rating="3">★</span>
+                        <span class="star" data-rating="4">★</span>
+                        <span class="star" data-rating="5">★</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="feedbackText">Feedback:</label>
+                    <textarea id="feedbackText" placeholder="Share your experience..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-star"></i>
+                    Submit Feedback
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <span class="close" onclick="closeConfirmModal()">&times;</span>
+            <h3 id="confirmTitle">Confirm Action</h3>
+            <p id="confirmMessage">Are you sure?</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+                <button class="btn btn-primary" id="confirmBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        function switchTab(tabName) {
+            // Remove active class from all tabs and content
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Add active class to clicked tab and corresponding content
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+        }
+        
+        function filterRequests() {
+            // Simple filtering for demo
+            const filterValue = document.getElementById('statusFilter').value;
+            const cards = document.querySelectorAll('.request-card');
+            
+            cards.forEach(card => {
+                const statusBadge = card.querySelector('.status-badge');
+                if (filterValue === '' || statusBadge.textContent.toLowerCase().includes(filterValue)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+        
+        function closeFeedbackModal() {
+            hideModal('feedbackModal');
+        }
+        
+        function closeConfirmModal() {
+            hideModal('confirmModal');
+        }
+    </script>
+</body>
+</html>

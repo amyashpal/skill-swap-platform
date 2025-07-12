@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Skill Swap Platform - Home</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <!-- Header Navigation -->
+    <nav class="navbar">
+      <div class="nav-container">
+        <a
+          href="{{ url_for('index') }}"
+          style="text-decoration: none; color: inherit"
+        >
+          <h1 class="nav-title">
+            <i class="fas fa-exchange-alt"></i>
+            Skill Swap Platform
+          </h1>
+        </a>
+
+        <div class="nav-actions">
+          {% if session.user_id %}
+          <div class="user-profile">
+            <img
+              src="{{ url_for('static', filename='images/default-avatar.png') }}"
+              alt="Profile"
+              class="nav-avatar"
+            />
+            <span>{{ session.name }}</span>
+            <a href="{{ url_for('profile') }}" class="btn btn-secondary"
+              >Profile</a
+            >
+            <a href="{{ url_for('swap_requests') }}" class="btn btn-secondary"
+              >Requests</a
+            >
+            <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+          </div>
+          {% else %}
+          <a href="{{ url_for('login') }}" class="login-btn">Login</a>
+          {% endif %}
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Search and Filter Section -->
+      <div class="search-section">
+        <div class="search-container">
+          <div class="search-bar">
+            <i class="fas fa-search"></i>
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="Search by skills or name..."
+            />
+          </div>
+          <div class="filter-dropdown">
+            <label for="availabilityFilter">Availability:</label>
+            <select id="availabilityFilter">
+              <option value="">All</option>
+              <option value="weekends">Weekends</option>
+              <option value="evenings">Evenings</option>
+              <option value="weekdays">Weekdays</option>
+              <option value="flexible">Flexible</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Public Profiles Section -->
+      <div class="profiles-section">
+        <h2>Available Skills</h2>
+        <div class="profiles-grid" id="profilesGrid">
+          {% for profile in profiles %}
+          <div class="profile-card">
+            <div class="profile-photo">
+              <img
+                src="{{ url_for('static', filename='images/default-avatar.png') }}"
+                alt="{{ profile.name }}"
+              />
+            </div>
+            <div class="profile-info">
+              <h3>{{ profile.name }}</h3>
+              <p class="location">
+                <i class="fas fa-map-marker-alt"></i> {{ profile.location or
+                'Not specified' }}
+              </p>
+              <div class="skills">
+                <div class="skills-offered">
+                  <strong>Offers:</strong> {{ profile.skills_offered[:50] }}{%
+                  if profile.skills_offered|length > 50 %}...{% endif %}
+                </div>
+                <div class="skills-wanted">
+                  <strong>Wants:</strong> {{ profile.skills_wanted[:50] }}{% if
+                  profile.skills_wanted|length > 50 %}...{% endif %}
+                </div>
+              </div>
+              <div class="profile-meta">
+                <span class="rating"
+                  ><i class="fas fa-star"></i> {{ profile.rating or 'New'
+                  }}</span
+                >
+                <span class="availability"
+                  ><i class="fas fa-calendar-alt"></i> {{
+                  profile.availability.title() }}</span
+                >
+              </div>
+              <a
+                href="{{ url_for('public_profile', user_id=profile.id) }}"
+                class="btn btn-primary"
+                >View Profile</a
+              >
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination" id="pagination">
+        <!-- Pagination buttons will be generated dynamically -->
+      </div>
+    </main>
+
+    <!-- Login Required Modal -->
+    <div class="modal" id="loginModal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Login Required</h3>
+        <p>You need to login to request skill swaps.</p>
+        <a href="{{ url_for('login') }}" class="btn btn-primary">Go to Login</a>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/home.js') }}"></script>
+  </body>
+</html>
