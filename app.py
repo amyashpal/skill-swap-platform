@@ -1,15 +1,26 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
 import firebase_admin
-from firebase_admin import credentials, firestore, auth
+from firebase_admin import credentials, firestore, auth, storage
 import os
 from datetime import datetime
 import json
 from functools import wraps
+# from werkzeug.security import check_password_hash, secure_filename
 from werkzeug.security import check_password_hash
+from werkzeug.utils import secure_filename
+
+import uuid
+from PIL import Image
+import io
 
 # Initialize Flask app
 app = Flask(__name__)
 app.secret_key = 'amm'  # Change this to a secure secret key
+
+# Configuration constants
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+MAX_IMAGE_SIZE = (800, 800)  # Max dimensions for uploaded images
 
 # Firebase configuration
 try:
@@ -42,6 +53,37 @@ def admin_required(f):
             return redirect(url_for('index'))
         return f(*args, **kwargs)
     return decorated_function
+
+def allowed_file(filename):
+    """Check if uploaded file has allowed extension"""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def resize_image(image_data, max_size):
+    """Resize image to fit within max_size while maintaining aspect ratio"""
+    try:
+        image = Image.open(io.BytesIO(image_data))
+        
+        # Convert to RGB if necessary (for JPEG compatibility)
+        if image.mode in ('RGBA', 'LA', 'P'):
+            # Create a white background
+            background = Image.new('RGB', image.size, (255, 255, 255))
+            if image.mode == 'P':
+                image = image.convert('RGBA')
+            background.paste(image, mask=image.split()[-1] if image.mode == 'RGBA' else None)
+            image = background
+        
+        # Calculate new dimensions
+        image.thumbnail(max_size, Image.Resampling.LANCZOS)
+        
+        # Save to bytes
+        output = io.BytesIO()
+        image.save(output, format='JPEG', quality=85, optimize=True)
+        output.seek(0)
+        
+        return output.getvalue()
+    except Exception as e:
+        print(f"Error resizing image: {e}")
+        return None
 
 # Home page - Display public profiles
 @app.route('/')
@@ -283,27 +325,39 @@ def profile():
 def update_profile():
     try:
         if db:
+            # Get multi-select skills as lists
+            skills_offered = request.form.getlist('skills_offered')
+            skills_wanted = request.form.getlist('skills_wanted')
+
+            # Debug logging to check what we're receiving
+            print(f"DEBUG: skills_offered = {skills_offered}")
+            print(f"DEBUG: skills_wanted = {skills_wanted}")
+            print(f"DEBUG: skills_offered type = {type(skills_offered)}")
+            print(f"DEBUG: skills_wanted type = {type(skills_wanted)}")
+
             user_data = {
                 'name': request.form['name'],
                 'location': request.form['location'],
-                'skills_offered': request.form['skills_offered'],
-                'skills_wanted': request.form['skills_wanted'],
+                'skills_offered': skills_offered,  # Store as list
+                'skills_wanted': skills_wanted,    # Store as list
                 'availability': request.form['availability'],
                 'profile_visibility': request.form['profile_visibility'],
                 'updated_at': datetime.now()
             }
-            
+
+            print(f"DEBUG: user_data being sent to Firestore = {user_data}")
+
             user_ref = db.collection('users').document(session['user_id'])
             user_ref.update(user_data)
-            
+
             flash('Profile updated successfully!')
         else:
             flash('Database not available')
-            
+
     except Exception as e:
         print(f"Update profile error: {e}")
         flash('Error updating profile')
-    
+
     return redirect(url_for('profile'))
 
 # Public profile view
@@ -538,6 +592,113 @@ def api_ban_user():
     except Exception as e:
         print(f"Ban user error: {e}")
         return jsonify({'success': False, 'message': 'Error banning user'})
+
+# Upload profile photo
+@app.route('/upload_photo', methods=['POST'])
+@login_required
+def upload_photo():
+    try:
+        if 'photo' not in request.files:
+            return jsonify({'success': False, 'message': 'No photo file provided'})
+        
+        file = request.files['photo']
+        if file.filename == '':
+            return jsonify({'success': False, 'message': 'No file selected'})
+        
+        if not file or not allowed_file(file.filename):
+            return jsonify({'success': False, 'message': 'Invalid file type. Please upload PNG, JPG, JPEG, GIF, or WEBP files.'})
+        
+        # Check file size
+        file_data = file.read()
+        if len(file_data) > MAX_FILE_SIZE:
+            return jsonify({'success': False, 'message': 'File too large. Maximum size is 5MB.'})
+        
+        # Reset file pointer
+        file.seek(0)
+        
+        # Resize image
+        resized_image = resize_image(file_data, MAX_IMAGE_SIZE)
+        if not resized_image:
+            return jsonify({'success': False, 'message': 'Error processing image'})
+        
+        # Generate unique filename
+        file_extension = 'jpg'  # We convert all images to JPEG
+        filename = f"profile_photos/{session['user_id']}_{uuid.uuid4().hex}.{file_extension}"
+        
+        try:
+            # Upload to Firebase Storage
+            bucket = storage.bucket()
+            blob = bucket.blob(filename)
+            
+            # Upload the resized image
+            blob.upload_from_string(
+                resized_image,
+                content_type='image/jpeg'
+            )
+            
+            # Make the file publicly accessible
+            blob.make_public()
+            
+            # Get the public URL
+            photo_url = blob.public_url
+            
+            # Update user profile with photo URL
+            if db:
+                user_ref = db.collection('users').document(session['user_id'])
+                user_ref.update({
+                    'profile_photo': photo_url,
+                    'updated_at': datetime.now()
+                })
+                
+                return jsonify({
+                    'success': True, 
+                    'message': 'Photo uploaded successfully!',
+                    'photo_url': photo_url
+                })
+            else:
+                return jsonify({'success': False, 'message': 'Database not available'})
+                
+        except Exception as storage_error:
+            print(f"Storage error: {storage_error}")
+            # Fallback: save locally if Firebase Storage fails
+            try:
+                # Create uploads directory if it doesn't exist
+                uploads_dir = os.path.join(app.root_path, 'static', 'uploads')
+                os.makedirs(uploads_dir, exist_ok=True)
+                
+                # Save file locally
+                local_filename = f"profile_{session['user_id']}_{uuid.uuid4().hex}.jpg"
+                local_path = os.path.join(uploads_dir, local_filename)
+                
+                with open(local_path, 'wb') as f:
+                    f.write(resized_image)
+                
+                # Create URL for local file
+                photo_url = f"/static/uploads/{local_filename}"
+                
+                # Update user profile with local photo URL
+                if db:
+                    user_ref = db.collection('users').document(session['user_id'])
+                    user_ref.update({
+                        'profile_photo': photo_url,
+                        'updated_at': datetime.now()
+                    })
+                    
+                    return jsonify({
+                        'success': True, 
+                        'message': 'Photo uploaded successfully! (Local storage)',
+                        'photo_url': photo_url
+                    })
+                else:
+                    return jsonify({'success': False, 'message': 'Database not available'})
+                    
+            except Exception as local_error:
+                print(f"Local storage error: {local_error}")
+                return jsonify({'success': False, 'message': 'Error saving photo'})
+        
+    except Exception as e:
+        print(f"Upload photo error: {e}")
+        return jsonify({'success': False, 'message': 'Error uploading photo'})
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
