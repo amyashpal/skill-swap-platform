@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - Skill Swap Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+</head>
+<body>
+    <!-- Header Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="nav-title">
+                <i class="fas fa-exchange-alt"></i>
+                Skill Swap Platform
+            </h1>
+            <div class="nav-actions">
+                <a href="{{ url_for('index') }}" class="home-btn">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                <div class="user-profile">
+                    <img src="{{ url_for('static', filename='images/default-avatar.png') }}" alt="Profile" class="nav-avatar">
+                    <span>{{ session.name }}</span>
+                    <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="profile-container">
+        <div class="profile-card">
+            <div class="profile-photo">
+                <img id="profileAvatar" src="{% if user_data.profile_picture %}{{ user_data.profile_picture }}{% else %}{{ url_for('static', filename='images/default-avatar.png') }}{% endif %}" alt="Profile Photo">
+                <input type="file" id="photoInput" accept="image/*" style="display: none;" onchange="handlePhotoUpload(this)">
+                <button class="upload-btn" onclick="uploadPhoto()">
+                    <i class="fas fa-camera"></i> Change Photo
+                </button>
+            </div>
+            <div class="profile-info">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        <div class="flash-messages">
+                            {% for message in messages %}
+                                <div class="alert alert-success">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                
+                <form method="POST" action="{{ url_for('update_profile') }}" id="profileForm">
+                    <div class="form-group">
+                        <label for="name">
+                            <i class="fas fa-user"></i> Name
+                        </label>
+                        <input type="text" id="name" name="name" value="{{ user_data.name or '' }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location">
+                            <i class="fas fa-map-marker-alt"></i> Location
+                        </label>
+                        <input type="text" id="location" name="location" value="{{ user_data.location or '' }}" placeholder="Enter your location">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="skills_offered">
+                            <i class="fas fa-briefcase"></i> Skills Offered
+                        </label>
+                        <select id="skills_offered" name="skills_offered[]" multiple required>
+                            <option value="Python" {% if user_data.skills_offered and 'Python' in user_data.skills_offered %}selected{% endif %}>Python</option>
+                            <option value="JavaScript" {% if user_data.skills_offered and 'JavaScript' in user_data.skills_offered %}selected{% endif %}>JavaScript</option>
+                            <option value="Java" {% if user_data.skills_offered and 'Java' in user_data.skills_offered %}selected{% endif %}>Java</option>
+                            <option value="C++" {% if user_data.skills_offered and 'C++' in user_data.skills_offered %}selected{% endif %}>C++</option>
+                            <option value="C#" {% if user_data.skills_offered and 'C#' in user_data.skills_offered %}selected{% endif %}>C#</option>
+                            <option value="React" {% if user_data.skills_offered and 'React' in user_data.skills_offered %}selected{% endif %}>React</option>
+                            <option value="Node.js" {% if user_data.skills_offered and 'Node.js' in user_data.skills_offered %}selected{% endif %}>Node.js</option>
+                            <option value="Angular" {% if user_data.skills_offered and 'Angular' in user_data.skills_offered %}selected{% endif %}>Angular</option>
+                            <option value="Vue.js" {% if user_data.skills_offered and 'Vue.js' in user_data.skills_offered %}selected{% endif %}>Vue.js</option>
+                            <option value="PHP" {% if user_data.skills_offered and 'PHP' in user_data.skills_offered %}selected{% endif %}>PHP</option>
+                            <option value="Ruby" {% if user_data.skills_offered and 'Ruby' in user_data.skills_offered %}selected{% endif %}>Ruby</option>
+                            <option value="Go" {% if user_data.skills_offered and 'Go' in user_data.skills_offered %}selected{% endif %}>Go</option>
+                            <option value="Swift" {% if user_data.skills_offered and 'Swift' in user_data.skills_offered %}selected{% endif %}>Swift</option>
+                            <option value="Kotlin" {% if user_data.skills_offered and 'Kotlin' in user_data.skills_offered %}selected{% endif %}>Kotlin</option>
+                            <option value="TypeScript" {% if user_data.skills_offered and 'TypeScript' in user_data.skills_offered %}selected{% endif %}>TypeScript</option>
+                            <option value="SQL" {% if user_data.skills_offered and 'SQL' in user_data.skills_offered %}selected{% endif %}>SQL</option>
+                            <option value="HTML/CSS" {% if user_data.skills_offered and 'HTML/CSS' in user_data.skills_offered %}selected{% endif %}>HTML/CSS</option>
+                            <option value="Docker" {% if user_data.skills_offered and 'Docker' in user_data.skills_offered %}selected{% endif %}>Docker</option>
+                            <option value="AWS" {% if user_data.skills_offered and 'AWS' in user_data.skills_offered %}selected{% endif %}>AWS</option>
+                            <option value="Machine Learning" {% if user_data.skills_offered and 'Machine Learning' in user_data.skills_offered %}selected{% endif %}>Machine Learning</option>
+                        </select>
+                        <small class="form-hint">Search and select multiple skills</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="skills_wanted">
+                            <i class="fas fa-lightbulb"></i> Skills Wanted
+                        </label>
+                        <select id="skills_wanted" name="skills_wanted[]" multiple required>
+                            <option value="Python" {% if user_data.skills_wanted and 'Python' in user_data.skills_wanted %}selected{% endif %}>Python</option>
+                            <option value="JavaScript" {% if user_data.skills_wanted and 'JavaScript' in user_data.skills_wanted %}selected{% endif %}>JavaScript</option>
+                            <option value="Java" {% if user_data.skills_wanted and 'Java' in user_data.skills_wanted %}selected{% endif %}>Java</option>
+                            <option value="C++" {% if user_data.skills_wanted and 'C++' in user_data.skills_wanted %}selected{% endif %}>C++</option>
+                            <option value="C#" {% if user_data.skills_wanted and 'C#' in user_data.skills_wanted %}selected{% endif %}>C#</option>
+                            <option value="React" {% if user_data.skills_wanted and 'React' in user_data.skills_wanted %}selected{% endif %}>React</option>
+                            <option value="Node.js" {% if user_data.skills_wanted and 'Node.js' in user_data.skills_wanted %}selected{% endif %}>Node.js</option>
+                            <option value="Angular" {% if user_data.skills_wanted and 'Angular' in user_data.skills_wanted %}selected{% endif %}>Angular</option>
+                            <option value="Vue.js" {% if user_data.skills_wanted and 'Vue.js' in user_data.skills_wanted %}selected{% endif %}>Vue.js</option>
+                            <option value="PHP" {% if user_data.skills_wanted and 'PHP' in user_data.skills_wanted %}selected{% endif %}>PHP</option>
+                            <option value="Ruby" {% if user_data.skills_wanted and 'Ruby' in user_data.skills_wanted %}selected{% endif %}>Ruby</option>
+                            <option value="Go" {% if user_data.skills_wanted and 'Go' in user_data.skills_wanted %}selected{% endif %}>Go</option>
+                            <option value="Swift" {% if user_data.skills_wanted and 'Swift' in user_data.skills_wanted %}selected{% endif %}>Swift</option>
+                            <option value="Kotlin" {% if user_data.skills_wanted and 'Kotlin' in user_data.skills_wanted %}selected{% endif %}>Kotlin</option>
+                            <option value="TypeScript" {% if user_data.skills_wanted and 'TypeScript' in user_data.skills_wanted %}selected{% endif %}>TypeScript</option>
+                            <option value="SQL" {% if user_data.skills_wanted and 'SQL' in user_data.skills_wanted %}selected{% endif %}>SQL</option>
+                            <option value="HTML/CSS" {% if user_data.skills_wanted and 'HTML/CSS' in user_data.skills_wanted %}selected{% endif %}>HTML/CSS</option>
+                            <option value="Docker" {% if user_data.skills_wanted and 'Docker' in user_data.skills_wanted %}selected{% endif %}>Docker</option>
+                            <option value="AWS" {% if user_data.skills_wanted and 'AWS' in user_data.skills_wanted %}selected{% endif %}>AWS</option>
+                            <option value="Machine Learning" {% if user_data.skills_wanted and 'Machine Learning' in user_data.skills_wanted %}selected{% endif %}>Machine Learning</option>
+                        </select>
+                        <small class="form-hint">Search and select multiple skills</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="availability">
+                            <i class="fas fa-calendar-alt"></i> Availability
+                        </label>
+                        <select id="availability" name="availability">
+                            <option value="weekends" {% if user_data.availability == 'weekends' %}selected{% endif %}>Weekends</option>
+                            <option value="evenings" {% if user_data.availability == 'evenings' %}selected{% endif %}>Evenings</option>
+                            <option value="weekdays" {% if user_data.availability == 'weekdays' %}selected{% endif %}>Weekdays</option>
+                            <option value="flexible" {% if user_data.availability == 'flexible' %}selected{% endif %}>Flexible</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="profile_visibility">
+                            <i class="fas fa-eye"></i> Profile Visibility
+                        </label>
+                        <select id="profile_visibility" name="profile_visibility">
+                            <option value="public" {% if user_data.profile_visibility == 'public' %}selected{% endif %}>Public</option>
+                            <option value="private" {% if user_data.profile_visibility == 'private' %}selected{% endif %}>Private</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs">
+            <a href="{{ url_for('index') }}" class="tab-item">Home</a>
+            <a href="{{ url_for('swap_requests') }}" class="tab-item">Swap Requests</a>
+        </div>
+    </main>
+
+    <!-- jQuery and Select2 JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        function uploadPhoto() {
+            document.getElementById('photoInput').click();
+        }
+        
+        function handlePhotoUpload(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                
+                // Check file size (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('File size must be less than 5MB');
+                    return;
+                }
+                
+                // Check file type
+                if (!file.type.startsWith('image/')) {
+                    alert('Please select an image file');
+                    return;
+                }
+                
+                // Preview the image
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profileAvatar').src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+                
+                // Upload the file
+                const formData = new FormData();
+                formData.append('photo', file);
+                
+                fetch('/upload_photo', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Photo uploaded successfully!');
+                        // Update the profile picture URL
+                        document.getElementById('profileAvatar').src = data.photo_url;
+                    } else {
+                        alert('Error uploading photo: ' + data.message);
+                        // Restore original image on error
+                        document.getElementById('profileAvatar').src = '{{ url_for("static", filename="images/default-avatar.png") }}';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error uploading photo');
+                    // Restore original image on error
+                    document.getElementById('profileAvatar').src = '{{ url_for("static", filename="images/default-avatar.png") }}';
+                });
+            }
+        }
+        
+        // Initialize Select2 for multi-select dropdowns
+        $(document).ready(function() {
+            $('#skills_offered').select2({
+                placeholder: 'Select skills you can offer',
+                allowClear: true,
+                width: '100%',
+                theme: 'default'
+            });
+            
+            $('#skills_wanted').select2({
+                placeholder: 'Select skills you want to learn',
+                allowClear: true,
+                width: '100%',
+                theme: 'default'
+            });
+        });
+    </script>
+</body>
+</html>

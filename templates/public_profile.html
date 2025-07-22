@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Public Profile - Skill Swap Platform</title>
+   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="nav-title">
+                <i class="fas fa-exchange-alt"></i>
+                Skill Swap Platform
+            </h1>
+            <div class="nav-actions">
+                <button class="home-btn" onclick="window.location.href='{{ url_for('index') }}'">
+                    <i class="fas fa-home"></i> Home
+                </button>
+                <div class="user-profile" id="userProfile" style="display: none;">
+                    <img src="{{ url_for('static', filename='images/default-avatar.png') }}" alt="Profile" class="nav-avatar" id="navAvatar">
+                    <span id="navUsername">User</span>
+                    <button onclick="logout()" class="logout-btn">Logout</button>
+                </div>
+                <button class="login-btn" id="loginBtn" onclick="window.location.href='{{ url_for('login') }}'">Login</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="public-profile-container">
+        <div class="public-profile-card">
+            <div class="profile-header">
+                <div class="profile-photo">
+                    <img id="profilePhoto" src="{{ url_for('static', filename='images/default-avatar.png') }}" alt="Profile Photo">
+                </div>
+                <div class="profile-basic-info">
+                    <h2 id="profileName">User Name</h2>
+                    <p id="profileLocation">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Location</span>
+                    </p>
+                    <div class="profile-rating">
+                        <i class="fas fa-star"></i>
+                        <span id="profileRating">4.5</span>
+                        <span id="reviewCount">(12 reviews)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-content">
+                <div class="skills-section">
+                    <h3>
+                        <i class="fas fa-briefcase"></i>
+                        Skills Offered
+                    </h3>
+                    <div class="skills-list" id="skillsOffered">
+                        <!-- Skills will be loaded dynamically -->
+                    </div>
+                </div>
+
+                <div class="skills-section">
+                    <h3>
+                        <i class="fas fa-lightbulb"></i>
+                        Skills Wanted
+                    </h3>
+                    <div class="skills-list" id="skillsWanted">
+                        <!-- Skills will be loaded dynamically -->
+                    </div>
+                </div>
+
+                <div class="availability-section">
+                    <h3>
+                        <i class="fas fa-calendar-alt"></i>
+                        Availability
+                    </h3>
+                    <p id="availability">Weekends</p>
+                </div>
+
+                <div class="feedback-section">
+                    <h3>
+                        <i class="fas fa-comments"></i>
+                        Recent Feedback
+                    </h3>
+                    <div class="feedback-list" id="feedbackList">
+                        <!-- Feedback will be loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-actions">
+                <button class="btn btn-primary" id="requestBtn" onclick="showRequestForm()">
+                    <i class="fas fa-handshake"></i>
+                    Request Skill Swap
+                </button>
+                <button class="btn btn-secondary" onclick="history.back()">
+                    <i class="fas fa-arrow-left"></i>
+                    Back
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Request Form Modal -->
+    <div class="modal" id="requestModal">
+        <div class="modal-content">
+            <span class="close" onclick="closeRequestForm()">&times;</span>
+            <h3>Request Skill Swap</h3>
+            <form id="requestForm">
+                <div class="form-group">
+                    <label for="mySkill">Your Skill to Offer</label>
+                    <select id="mySkill" required>
+                        <option value="">Select a skill you offer...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="theirSkill">Skill You Want</label>
+                    <select id="theirSkill" required>
+                        <option value="">Select a skill they offer...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea id="message" placeholder="Tell them why you'd like to swap skills..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                    Send Request
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Login Required Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>Login Required</h3>
+            <p>You need to login to request skill swaps.</p>
+            <button onclick="window.location.href='login.html'" class="btn btn-primary">Go to Login</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/public-profile.js') }}"></script>
+</body>
+</html>
